@@ -11,7 +11,7 @@ check.packages <- function(pkg){
   sapply(pkg, library, character.only = TRUE)
 }
 
-packages <- c("tidyverse", "data.table", "httr", "jsonlite")
+packages <- c("stringr", "tidyverse", "data.table", "httr", "jsonlite")
 
 check.packages(packages)
 
@@ -41,4 +41,31 @@ for (i in 2:length(stateCodes)){
   
 }
 
-##### FORMAT DATA #####
+##### format data #####
+stateHistoryData <- stateHistoryData %>%
+  mutate(year = str_sub(date, start = 0, end = 4),
+         month = str_sub(date, start = 5, end = 6),
+         day = str_sub(date, start = 7, end = 8)) %>%
+  mutate(date = as.Date(ISOdate(year, month, day)))
+
+testResults <- stateHistoryData %>%
+  rename(positiveCumulative = positive, negativeCumulative = negative) %>%
+  select(date, state, positiveCumulative, negativeCumulative,
+         hospitalizedCurrently, hospitalizedCumulative,
+         positiveIncrease, negativeIncrease)
+
+##### combined us patterns #####
+testResults %>%
+  group_by(date) %>%
+  summarise(CumulativeInfections = sum(positiveCumulative),
+            NewPositives = sum(positiveIncrease)) %>%
+  ggplot(aes(x = date, y = NewPositives)) +
+  geom_line()
+
+testResults %>%
+  group_by(date) %>%
+  summarise(CumulativeInfections = sum(positiveCumulative),
+            NewPositives = sum(positiveIncrease)) %>%
+  ggplot(aes(x = date, y = CumulativeInfections)) +
+  geom_line()
+
